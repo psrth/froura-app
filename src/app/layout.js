@@ -4,7 +4,7 @@ import { Providers } from "./providers";
 export const metadata = {
   title: "sandbox / froura.ai",
   description: "safe financial systems for AI agent driven digital commerce.",
-  metadataBase: new URL("https://sandbox.froura.ai/"),
+  metadataBase: new URL("https://sandbox.froura.xyz/"),
 };
 
 export default function RootLayout({ children }) {
