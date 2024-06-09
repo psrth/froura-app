@@ -20,9 +20,11 @@ import {
   useToast,
   InputGroup,
   InputLeftAddon,
+  InputRightElement,
+  Icon,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { FiPlus } from "react-icons/fi";
+import { FiPlus, FiSend } from "react-icons/fi";
 import moment from "moment";
 
 export default function Home({ params }) {
@@ -34,6 +36,9 @@ export default function Home({ params }) {
   const [transactions, setTransactions] = useState();
   const [deposit, setDeposit] = useState();
   const [dashTrigger, setDashTrigger] = useState(0);
+  const [messages, setMessages] = useState([]);
+  const [userMessage, setUserMessage] = useState("");
+  const [thread, setThread] = useState();
 
   // -------
   // AUTHORIZATION LOGIC
@@ -60,6 +65,23 @@ export default function Home({ params }) {
     depositMoney(deposit);
     setDashTrigger(dashTrigger + 1);
     onClose();
+  }
+
+  function sendUserMessage() {
+    if (userMessage) {
+      setMessages([
+        ...messages,
+        {
+          type: "user",
+          name: "Parth Sharma",
+          img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+          msg: userMessage,
+        },
+      ]);
+      let msgcontent = userMessage;
+      setUserMessage("");
+      postUserMessage(msgcontent);
+    }
   }
 
   // -------
@@ -159,6 +181,37 @@ export default function Home({ params }) {
       });
   }
 
+  function postUserMessage(msgcontent) {
+    fetch("https://api.froura.xyz/api/agent/assistant/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Token " + token,
+      },
+      body: JSON.stringify({
+        message: msgcontent,
+      }),
+    })
+      .then((response) =>
+        response.json().then((data) => ({
+          data: data,
+          status: response.status,
+        }))
+      )
+      .then((res) => {
+        if (res.status < 300) {
+          console.log(res.data);
+        } else {
+          toast({
+            title: "An error occurred. Please try again.",
+            position: "top-right",
+            status: "error",
+            isClosable: true,
+          });
+        }
+      });
+  }
+
   // -------
   // useEffect
   // -------
@@ -176,7 +229,6 @@ export default function Home({ params }) {
   // -------
   // CHATBOT LOGIC
   // -------
-  const [messages, setMessages] = useState([]);
 
   const UserMessage = (props) => {
     return (
@@ -231,10 +283,6 @@ export default function Home({ params }) {
         </Flex>
       </Flex>
     );
-  };
-
-  const updateMessages = (newMessages) => {
-    setMessages([...messages, ...newMessages]);
   };
 
   return (
@@ -424,15 +472,21 @@ export default function Home({ params }) {
                 ))}
               </Flex>
             </Flex>
-            <Input
-              padding="10px 20px"
-              border="1px solid"
-              borderColor="#CBD3D9"
-              variant="outline"
-              borderRadius="30px"
-              placeholder="How can I help?"
-              onClick={() => updateMessages([])}
-            />
+            <InputGroup>
+              <Input
+                padding="10px 20px"
+                border="1px solid"
+                borderColor="#CBD3D9"
+                variant="outline"
+                borderRadius="30px"
+                placeholder="How can I help?"
+                value={userMessage}
+                onChange={(e) => setUserMessage(e.target.value)}
+              />
+              <InputRightElement>
+                <Icon as={FiSend} color="black" onClick={sendUserMessage} />
+              </InputRightElement>
+            </InputGroup>
           </Flex>
         </Flex>
       ) : (
@@ -467,16 +521,9 @@ export default function Home({ params }) {
           </ModalFooter>
         </ModalContent>
       </Modal> */}
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        size="md"
-        isCentered
-        closeOnEsc={false}
-        closeOnOverlayClick={false}
-      >
+      <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
         <ModalOverlay />
-        <ModalContent p="20px">
+        <ModalContent p="20px" borderRadius="20px">
           <ModalHeader fontSize="22px">Manual Deposits</ModalHeader>
 
           <ModalBody fontSize="16px">
@@ -495,7 +542,12 @@ export default function Home({ params }) {
             <Button colorScheme="gray" mr={3} onClick={onClose} width="50%">
               Cancel
             </Button>
-            <Button colorScheme="green" width="50%" onClick={depositHandler}>
+            <Button
+              colorScheme="green"
+              width="50%"
+              onClick={depositHandler}
+              isDisabled={!deposit}
+            >
               Add Money
             </Button>
           </ModalFooter>
@@ -505,12 +557,6 @@ export default function Home({ params }) {
   );
 }
 
-// {
-//   type: "user",
-//   name: "Parth Sharma",
-//   img: "https://avatars.githubusercontent.com/u/45586386?v=4",
-//   msg: "Can you order me a hamburger from McDonald’s?",
-// },
 // {
 //   type: "agent",
 //   name: "froura.ai",
