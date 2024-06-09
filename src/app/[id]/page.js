@@ -18,6 +18,8 @@ import {
   useDisclosure,
   Spinner,
   useToast,
+  InputGroup,
+  InputLeftAddon,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { FiPlus } from "react-icons/fi";
@@ -29,7 +31,9 @@ export default function Home({ params }) {
   // STATE
   // -------
   const [wallet, setWallet] = useState();
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState();
+  const [deposit, setDeposit] = useState();
+  const [dashTrigger, setDashTrigger] = useState(0);
 
   // -------
   // AUTHORIZATION LOGIC
@@ -50,6 +54,12 @@ export default function Home({ params }) {
   function inUSD(amount) {
     let formattedAmount = (amount / 100).toFixed(2);
     return `$${formattedAmount}`;
+  }
+
+  function depositHandler() {
+    depositMoney(deposit);
+    setDashTrigger(dashTrigger + 1);
+    onClose();
   }
 
   // -------
@@ -111,13 +121,51 @@ export default function Home({ params }) {
       });
   }
 
+  function depositMoney(amount) {
+    fetch("https://api.froura.xyz/api/gateway/transactions/deposit/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Token " + token,
+      },
+      body: JSON.stringify({
+        amount: amount * 100,
+        transaction_type: "credit",
+        description: "Manual deposit to wallet",
+      }),
+    })
+      .then((response) =>
+        response.json().then((data) => ({
+          data: data,
+          status: response.status,
+        }))
+      )
+      .then((res) => {
+        if (res.status < 300) {
+          toast({
+            title: "Money deposited in wallet successfully.",
+            position: "top-right",
+            status: "success",
+            isClosable: true,
+          });
+        } else {
+          toast({
+            title: "An error occurred. Please try again.",
+            position: "top-right",
+            status: "error",
+            isClosable: true,
+          });
+        }
+      });
+  }
+
   // -------
   // useEffect
   // -------
   useEffect(() => {
     getUserWallet();
     getUserTransactions();
-  }, []);
+  }, [dashTrigger]);
 
   // -------
   // MODAL LOGIC
@@ -277,52 +325,56 @@ export default function Home({ params }) {
               <Text color="#3B3B3B" fontWeight="700" fontSize="22px">
                 Recent Transactions
               </Text>
-              <Flex
-                flexDir="column"
-                height="35vh"
-                minH="35vh"
-                maxH="35vh"
-                overflow="scroll"
-              >
-                {transactions
-                  .slice()
-                  .reverse()
-                  .map((tr, id) => (
-                    <Flex flexDir="column" cursor="pointer" key={id}>
-                      <Flex
-                        width="100%"
-                        height="1px"
-                        bg="#526C7F"
-                        opacity="0.2"
-                        m="10px 0"
-                      />
-                      <Flex
-                        flexDir="row"
-                        width="100%"
-                        justifyContent="space-between"
-                      >
-                        <Text fontSize="16px" fontWeight="400">
-                          {tr.description}
-                        </Text>
-                        <Text fontSize="16px" fontWeight="600">
-                          {tr.transaction_type === "credit" ? "+" : "-"}
-                          {inUSD(tr.amount)}
+              {transactions ? (
+                <Flex
+                  flexDir="column"
+                  height="35vh"
+                  minH="35vh"
+                  maxH="35vh"
+                  overflow="scroll"
+                >
+                  {transactions
+                    .slice()
+                    .reverse()
+                    .map((tr, id) => (
+                      <Flex flexDir="column" cursor="pointer" key={id}>
+                        <Flex
+                          width="100%"
+                          height="1px"
+                          bg="#526C7F"
+                          opacity="0.2"
+                          m="10px 0"
+                        />
+                        <Flex
+                          flexDir="row"
+                          width="100%"
+                          justifyContent="space-between"
+                        >
+                          <Text fontSize="16px" fontWeight="400">
+                            {tr.description}
+                          </Text>
+                          <Text fontSize="16px" fontWeight="600">
+                            {tr.transaction_type === "credit" ? "+" : "-"}
+                            {inUSD(tr.amount)}
+                          </Text>
+                        </Flex>
+                        <Text color="#5D5D5D" fontSize="14px">
+                          {tr.transaction_type.toUpperCase()},{" "}
+                          {moment(tr.timestamp).fromNow()}
                         </Text>
                       </Flex>
-                      <Text color="#5D5D5D" fontSize="14px">
-                        {tr.transaction_type.toUpperCase()},{" "}
-                        {moment(tr.timestamp).fromNow()}
-                      </Text>
-                    </Flex>
-                  ))}
-                <Flex
-                  width="100%"
-                  height="1px"
-                  bg="black"
-                  opacity="0.2"
-                  m="10px 0"
-                />
-              </Flex>
+                    ))}
+                  <Flex
+                    width="100%"
+                    height="1px"
+                    bg="black"
+                    opacity="0.2"
+                    m="10px 0"
+                  />
+                </Flex>
+              ) : (
+                <Spinner />
+              )}
             </Flex>
           </Flex>
           {/* END LEFT COLUMN */}
@@ -379,48 +431,14 @@ export default function Home({ params }) {
               variant="outline"
               borderRadius="30px"
               placeholder="How can I help?"
-              onClick={() =>
-                updateMessages([
-                  {
-                    type: "user",
-                    name: "Parth Sharma",
-                    img: "https://avatars.githubusercontent.com/u/45586386?v=4",
-                    msg: "Can you order me a hamburger from McDonald’s?",
-                  },
-                  {
-                    type: "agent",
-                    name: "froura.ai",
-                    msg: "Sure! Just give me a second to process that request. I’ll connect with Doordash and send you a request to approve the final payment.",
-                    steps: [
-                      {
-                        text: "Connecting to DoorDash",
-                        status: "Completed",
-                      },
-                      {
-                        text: "Sending DoorDash order and customer details",
-                        status: "Progress",
-                      },
-                      {
-                        text: "Raising a payment request",
-                        status: "Pending",
-                      },
-                      {
-                        text: "Waiting for confirmation of payment receipt",
-                        status: "Pending",
-                      },
-                    ],
-                    msg_conf:
-                      "Done! Your order is placed. It should arrive within 30 minutes.",
-                  },
-                ])
-              }
+              onClick={() => updateMessages([])}
             />
           </Flex>
         </Flex>
       ) : (
         <Spinner m="auto" />
       )}
-      <Modal
+      {/* <Modal
         isOpen={isOpen}
         onClose={onClose}
         size="md"
@@ -448,31 +466,73 @@ export default function Home({ params }) {
             </Button>
           </ModalFooter>
         </ModalContent>
+      </Modal> */}
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="md"
+        isCentered
+        closeOnEsc={false}
+        closeOnOverlayClick={false}
+      >
+        <ModalOverlay />
+        <ModalContent p="20px">
+          <ModalHeader fontSize="22px">Manual Deposits</ModalHeader>
+
+          <ModalBody fontSize="16px">
+            This is a sandbox that adds money to your froura wallet instead of
+            using Stripe. Please enter an amount to add here:
+            <InputGroup mt="20px">
+              <InputLeftAddon>USD</InputLeftAddon>
+              <Input
+                type="number"
+                onChange={(e) => setDeposit(e.target.value)}
+              />
+            </InputGroup>
+          </ModalBody>
+
+          <ModalFooter mt="20px">
+            <Button colorScheme="gray" mr={3} onClick={onClose} width="50%">
+              Cancel
+            </Button>
+            <Button colorScheme="green" width="50%" onClick={depositHandler}>
+              Add Money
+            </Button>
+          </ModalFooter>
+        </ModalContent>
       </Modal>
     </>
   );
 }
 
-// const transactions = [
-//   {
-//     id: 1,
-//     title: "Cheeseburger and Fries",
-//     payee: "McDonald's",
-//     amount: "12.99",
-//     time: "2 days ago",
-//   },
-//   {
-//     id: 1,
-//     title: "Cheeseburger and Fries",
-//     payee: "McDonald's",
-//     amount: "12.99",
-//     time: "2 days ago",
-//   },
-//   {
-//     id: 1,
-//     title: "Cheeseburger and Fries",
-//     payee: "McDonald's",
-//     amount: "12.99",
-//     time: "2 days ago",
-//   },
-// ];
+// {
+//   type: "user",
+//   name: "Parth Sharma",
+//   img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+//   msg: "Can you order me a hamburger from McDonald’s?",
+// },
+// {
+//   type: "agent",
+//   name: "froura.ai",
+//   msg: "Sure! Just give me a second to process that request. I’ll connect with Doordash and send you a request to approve the final payment.",
+//   steps: [
+//     {
+//       text: "Connecting to DoorDash",
+//       status: "Completed",
+//     },
+//     {
+//       text: "Sending DoorDash order and customer details",
+//       status: "Progress",
+//     },
+//     {
+//       text: "Raising a payment request",
+//       status: "Pending",
+//     },
+//     {
+//       text: "Waiting for confirmation of payment receipt",
+//       status: "Pending",
+//     },
+//   ],
+//   msg_conf:
+//     "Done! Your order is placed. It should arrive within 30 minutes.",
+// },
