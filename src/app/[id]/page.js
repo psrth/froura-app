@@ -24,7 +24,7 @@ import {
   Icon,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
-import { FiPlus, FiRefreshCw, FiSend } from "react-icons/fi";
+import { FiDollarSign, FiPlus, FiRefreshCw, FiSend } from "react-icons/fi";
 import moment from "moment";
 import AudioRecorder from "../components/audio";
 import ReactMarkdown from "react-markdown";
@@ -552,23 +552,42 @@ export default function Home({ params }) {
                           opacity="0.2"
                           m="10px 0"
                         />
-                        <Flex
-                          flexDir="row"
-                          width="100%"
-                          justifyContent="space-between"
-                        >
-                          <Text fontSize="16px" fontWeight="400">
-                            {tr.description}
-                          </Text>
-                          <Text fontSize="16px" fontWeight="600">
-                            {tr.transaction_type === "credit" ? "+" : "-"}
-                            {inUSD(tr.amount)}
-                          </Text>
+                        <Flex flexDir="row">
+                          <Box
+                            height="40px"
+                            width="40px"
+                            display="flex"
+                            bg="#E2E2E2"
+                            borderRadius="7px"
+                            mr="10px"
+                          >
+                            <Icon
+                              as={FiDollarSign}
+                              boxSize="20px"
+                              m="auto"
+                              color="#3B3B3B"
+                            />
+                          </Box>
+                          <Flex flexDir="column" width="100%">
+                            <Flex
+                              flexDir="row"
+                              width="100%"
+                              justifyContent="space-between"
+                            >
+                              <Text fontSize="16px" fontWeight="400">
+                                {tr.description}
+                              </Text>
+                              <Text fontSize="16px" fontWeight="600">
+                                {tr.transaction_type === "credit" ? "+" : "-"}
+                                {inUSD(tr.amount)}
+                              </Text>
+                            </Flex>
+                            <Text color="#5D5D5D" fontSize="14px">
+                              {/* {tr.transaction_type.toUpperCase()},{" "} */}
+                              {moment(tr.timestamp).fromNow()}
+                            </Text>
+                          </Flex>
                         </Flex>
-                        <Text color="#5D5D5D" fontSize="14px">
-                          {/* {tr.transaction_type.toUpperCase()},{" "} */}
-                          {moment(tr.timestamp).fromNow()}
-                        </Text>
                       </Flex>
                     ))}
                   <Flex
@@ -599,7 +618,7 @@ export default function Home({ params }) {
           >
             <Flex flexDir="column">
               <Flex flexDir="row" width="100%" justifyContent="space-between">
-                <Text fontSize="20px" fontWeight="400" color="#526C7F">
+                <Text fontSize="20px" fontWeight="500" color="#526C7F">
                   froura assistant
                 </Text>
                 <IconButton
@@ -637,18 +656,26 @@ export default function Home({ params }) {
               </Flex>
             </Flex>
             <Flex flexDir="row">
-              <InputGroup mr="10px">
+              <InputGroup
+                mr="10px"
+                border="1px solid"
+                borderColor="#CBD3D9"
+                borderRadius="30px"
+              >
                 <Input
                   padding="10px 20px"
-                  border="1px solid"
-                  borderColor="#CBD3D9"
-                  variant="outline"
+                  border="none"
                   borderRadius="30px"
                   placeholder="How can I help?"
                   value={userMessage}
                   onChange={(e) => setUserMessage(e.target.value)}
                 />
-                <InputRightElement>
+                <InputRightElement
+                  cursor="pointer"
+                  bg="white"
+                  borderRadius="20px"
+                  border="0px"
+                >
                   <Icon as={FiSend} color="black" onClick={sendUserMessage} />
                 </InputRightElement>
               </InputGroup>

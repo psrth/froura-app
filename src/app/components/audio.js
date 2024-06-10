@@ -95,6 +95,9 @@ const AudioRecorder = ({ setTranscribedText }) => {
       bg={recording ? "red" : "#002A48"}
       color="white"
       icon={recording ? <FiStopCircle /> : <FiMic />}
+      _hover={{
+        bg: recording ? "red.500" : "#7A8F9E",
+      }}
     />
   );
 };
