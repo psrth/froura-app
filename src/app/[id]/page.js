@@ -230,6 +230,8 @@ export default function Home({ params }) {
                 msg: res.data[0].content_blocks[0].text,
               },
             ]);
+
+            setDashTrigger(dashTrigger + 1);
           } else {
             toast({
               title: "An error occurred. Please try again.",
@@ -269,8 +271,7 @@ export default function Home({ params }) {
               },
             ]);
             setThread(res.data[0].thread_id);
-            if (res.data[0].tool_used === "create_doordash_order")
-              setDashTrigger(dashTrigger + 1);
+            setDashTrigger(dashTrigger + 1);
           } else {
             toast({
               title: "An error occurred. Please try again.",
@@ -346,7 +347,7 @@ export default function Home({ params }) {
               status: "success",
               isClosable: true,
             });
-            setDashTrigger(dashTrigger + 1);
+
             onClose2();
           }
         } else {
@@ -604,19 +605,6 @@ export default function Home({ params }) {
                 overflow="scroll"
               >
                 {messages.map((m, e) => (
-                  // <>
-                  //   {m.type === "user" ? (
-                  //     <UserMessage img={m.img} name={m.name} msg={m.msg} />
-                  //   ) : null}
-                  //   {m.type === "agent" ? (
-                  //     <AgentMessage
-                  //       name={m.name}
-                  //       msg={m.msg}
-                  //       steps={m.steps}
-                  //       msg_conf={m.msg_conf}
-                  //     />
-                  //   ) : null}
-                  // </>
                   <UserMessage img={m.img} name={m.name} msg={m.msg} />
                 ))}
               </Flex>
