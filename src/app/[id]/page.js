@@ -27,8 +27,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import {
   FiDollarSign,
-  FiEdit,
-  FiEdit2,
+  FiEye,
   FiPlus,
   FiRefreshCw,
   FiSend,
@@ -92,6 +91,8 @@ export default function Home({ params }) {
 
   function depositHandler() {
     depositMoney(deposit);
+    getUserWallet();
+    getUserTransactions();
     setDashTrigger(dashTrigger + 1);
     onClose();
   }
@@ -254,6 +255,7 @@ export default function Home({ params }) {
             status: "success",
             isClosable: true,
           });
+          setDashTrigger(dashTrigger + 1);
         } else {
           toast({
             title: "An error occurred. Please try again.",
@@ -449,9 +451,9 @@ export default function Home({ params }) {
         if (res.status < 300) {
           if (res.data) {
             toast({
-              title: "Payment successful.",
+              title: val ? "Payment successful." : "Denied successfully.",
               position: "top-right",
-              status: "success",
+              status: val ? "success" : "info",
               isClosable: true,
             });
 
@@ -711,9 +713,9 @@ export default function Home({ params }) {
                   froura assistant
                 </Text>
                 <Flex flexDir="row">
-                  <Tooltip label="Edit context">
+                  <Tooltip label="View context">
                     <IconButton
-                      icon={<FiEdit2 size="12px" />}
+                      icon={<FiEye size="12px" />}
                       height="30px"
                       width="30px"
                       minH="30px"
@@ -904,7 +906,7 @@ export default function Home({ params }) {
       <Modal isOpen={isOpen3} onClose={onClose3} size="md" isCentered>
         <ModalOverlay />
         <ModalContent p="20px" borderRadius="20px">
-          <ModalHeader fontSize="22px">Update User Details</ModalHeader>
+          <ModalHeader fontSize="22px">View User Details</ModalHeader>
 
           <ModalBody fontSize="16px">
             <Text fontWeight="400" fontSize="16px">
@@ -920,6 +922,7 @@ export default function Home({ params }) {
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
+                  isDisabled
                 />
               </InputGroup>
             </Flex>
@@ -933,6 +936,7 @@ export default function Home({ params }) {
                   type="text"
                   value={zip}
                   onChange={(e) => setZip(e.target.value)}
+                  isDisabled
                 />
               </InputGroup>
             </Flex>
@@ -946,22 +950,23 @@ export default function Home({ params }) {
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
+                  isDisabled
                 />
               </InputGroup>
             </Flex>
           </ModalBody>
 
-          <ModalFooter mt="20px">
-            <Button colorScheme="gray" mr={3} onClick={onClose3} width="50%">
-              Cancel
+          <ModalFooter mt="10px">
+            <Button colorScheme="gray" mr={3} onClick={onClose3} width="100%">
+              Back
             </Button>
-            <Button
+            {/* <Button
               colorScheme="blue"
               width="50%"
               onClick={handleUpdateUserDetails}
             >
               Save Changes
-            </Button>
+            </Button> */}
           </ModalFooter>
         </ModalContent>
       </Modal>
