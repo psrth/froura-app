@@ -54,6 +54,9 @@ export default function Home({ params }) {
   const [transcribedText, setTranscribedText] = useState("");
   const [consent, setConsent] = useState();
   const [thinking, setThinking] = useState(false);
+  const [address, setAddress] = useState("");
+  const [zip, setZip] = useState();
+  const [phone, setPhone] = useState("");
 
   // -------
   // AUTHORIZATION LOGIC
@@ -165,6 +168,36 @@ export default function Home({ params }) {
       });
   }
 
+  function getUserDetails() {
+    fetch("https://api.froura.xyz/api/users/me/", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Token " + token,
+      },
+    })
+      .then((response) =>
+        response.json().then((data) => ({
+          data: data,
+          status: response.status,
+        }))
+      )
+      .then((res) => {
+        if (res.status < 300) {
+          setAddress(res.data.address);
+          setZip(res.data.zip_code);
+          setPhone(res.data.phone_number);
+        } else {
+          toast({
+            title: "An error occurred. Please try again.",
+            position: "top-right",
+            status: "error",
+            isClosable: true,
+          });
+        }
+      });
+  }
+
   function getUserTransactions() {
     fetch("https://api.froura.xyz/api/gateway/transactions", {
       method: "GET",
@@ -216,6 +249,45 @@ export default function Home({ params }) {
         if (res.status < 300) {
           toast({
             title: "Money deposited in wallet successfully.",
+            position: "top-right",
+            status: "success",
+            isClosable: true,
+          });
+        } else {
+          toast({
+            title: "An error occurred. Please try again.",
+            position: "top-right",
+            status: "error",
+            isClosable: true,
+          });
+        }
+      });
+  }
+
+  function handleUpdateUserDetails() {
+    fetch("https://api.froura.xyz/api/users/update_me/", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Token " + token,
+      },
+      body: JSON.stringify({
+        address: address,
+        zip_code: zip,
+        phone_number: phone,
+      }),
+    })
+      .then((response) =>
+        response.json().then((data) => ({
+          data: data,
+          status: response.status,
+        }))
+      )
+      .then((res) => {
+        if (res.status < 300) {
+          onClose3();
+          toast({
+            title: "User details updated successfully.",
             position: "top-right",
             status: "success",
             isClosable: true,
@@ -404,6 +476,10 @@ export default function Home({ params }) {
   }, [dashTrigger]);
 
   useEffect(() => {
+    getUserDetails();
+  }, []);
+
+  useEffect(() => {
     if (transcribedText !== "") {
       customUserMessageSend(transcribedText);
     }
@@ -424,13 +500,18 @@ export default function Home({ params }) {
   // -------
   // MODAL LOGIC
   // -------
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure(); // deposits
   const {
     isOpen: isOpen2,
     onOpen: onOpen2,
     onClose: onClose2,
+  } = useDisclosure(); // payment requests
+  const {
+    isOpen: isOpen3,
+    onOpen: onOpen3,
+    onClose: onClose3,
   } = useDisclosure();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(false); // context
 
   // -------
   // CHATBOT LOGIC
@@ -640,9 +721,7 @@ export default function Home({ params }) {
                       minW="30px"
                       padding="0px"
                       mr="5px"
-                      onClick={() => {
-                        console.log("hello");
-                      }}
+                      onClick={onOpen3}
                     />
                   </Tooltip>
                   <Tooltip label="New session">
@@ -816,6 +895,71 @@ export default function Home({ params }) {
               isDisabled={!deposit}
             >
               Add Money
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      {/* ============= */}
+      <Modal isOpen={isOpen3} onClose={onClose3} size="md" isCentered>
+        <ModalOverlay />
+        <ModalContent p="20px" borderRadius="20px">
+          <ModalHeader fontSize="22px">Update User Details</ModalHeader>
+
+          <ModalBody fontSize="16px">
+            <Text fontWeight="400" fontSize="16px">
+              The froura assistant uses these details to facilitate events like
+              deliveries and confirmation invoices.
+            </Text>
+            <Flex flexDir="column" mt="15px">
+              <Text fontWeight="600" fontSize="16px">
+                Address
+              </Text>
+              <InputGroup mt="5px">
+                <Input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </InputGroup>
+            </Flex>
+
+            <Flex flexDir="column" mt="10px">
+              <Text fontWeight="600" fontSize="16px">
+                Zip Code
+              </Text>
+              <InputGroup mt="5px">
+                <Input
+                  type="text"
+                  value={zip}
+                  onChange={(e) => setZip(e.target.value)}
+                />
+              </InputGroup>
+            </Flex>
+
+            <Flex flexDir="column" mt="10px">
+              <Text fontWeight="600" fontSize="16px">
+                Phone Number
+              </Text>
+              <InputGroup mt="5px">
+                <Input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </InputGroup>
+            </Flex>
+          </ModalBody>
+
+          <ModalFooter mt="20px">
+            <Button colorScheme="gray" mr={3} onClick={onClose3} width="50%">
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              width="50%"
+              onClick={handleUpdateUserDetails}
+            >
+              Save Changes
             </Button>
           </ModalFooter>
         </ModalContent>
