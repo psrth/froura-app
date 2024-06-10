@@ -1,7 +1,8 @@
 "use client";
 import { useState, useRef } from "react";
-import { Button, Flex, Heading, Stack, Text } from "@chakra-ui/react";
+import { Button, Flex, Heading, Stack, IconButton } from "@chakra-ui/react";
 import OpenAI from "openai";
+import { FiMic, FiStopCircle } from "react-icons/fi";
 
 const openai = new OpenAI({
   apiKey: "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",
@@ -88,9 +89,13 @@ const AudioRecorder = ({ setTranscribedText }) => {
   };
 
   return (
-    <Button onClick={recording ? stopRecording : startRecording}>
-      {recording ? "Stop" : "Record"}
-    </Button>
+    <IconButton
+      onClick={recording ? stopRecording : startRecording}
+      borderRadius="100%"
+      bg={recording ? "red" : "#002A48"}
+      color="white"
+      icon={recording ? <FiStopCircle /> : <FiMic />}
+    />
   );
 };
 
