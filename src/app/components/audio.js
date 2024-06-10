@@ -1,6 +1,13 @@
 "use client";
 import { useState, useRef } from "react";
-import { Button, Flex, Heading, Stack, IconButton } from "@chakra-ui/react";
+import {
+  Button,
+  Flex,
+  Heading,
+  Stack,
+  IconButton,
+  Tooltip,
+} from "@chakra-ui/react";
 import OpenAI from "openai";
 import { FiMic, FiStopCircle } from "react-icons/fi";
 
@@ -89,16 +96,18 @@ const AudioRecorder = ({ setTranscribedText }) => {
   };
 
   return (
-    <IconButton
-      onClick={recording ? stopRecording : startRecording}
-      borderRadius="100%"
-      bg={recording ? "red" : "#002A48"}
-      color="white"
-      icon={recording ? <FiStopCircle /> : <FiMic />}
-      _hover={{
-        bg: recording ? "red.500" : "#7A8F9E",
-      }}
-    />
+    <Tooltip label="Record message" placement="top">
+      <IconButton
+        onClick={recording ? stopRecording : startRecording}
+        borderRadius="100%"
+        bg={recording ? "red" : "#002A48"}
+        color="white"
+        icon={recording ? <FiStopCircle /> : <FiMic />}
+        _hover={{
+          bg: recording ? "red.500" : "#7A8F9E",
+        }}
+      />
+    </Tooltip>
   );
 };
 

@@ -22,9 +22,17 @@ import {
   InputLeftAddon,
   InputRightElement,
   Icon,
+  Tooltip,
 } from "@chakra-ui/react";
 import { useEffect, useRef, useState } from "react";
-import { FiDollarSign, FiPlus, FiRefreshCw, FiSend } from "react-icons/fi";
+import {
+  FiDollarSign,
+  FiEdit,
+  FiEdit2,
+  FiPlus,
+  FiRefreshCw,
+  FiSend,
+} from "react-icons/fi";
 import moment from "moment";
 import AudioRecorder from "../components/audio";
 import ReactMarkdown from "react-markdown";
@@ -45,6 +53,7 @@ export default function Home({ params }) {
   const [thread, setThread] = useState("");
   const [transcribedText, setTranscribedText] = useState("");
   const [consent, setConsent] = useState();
+  const [thinking, setThinking] = useState(false);
 
   // -------
   // AUTHORIZATION LOGIC
@@ -98,6 +107,7 @@ export default function Home({ params }) {
       let msgcontent = userMessage;
       setUserMessage("");
       postUserMessage(msgcontent);
+      setThinking(true);
     }
   }
 
@@ -242,13 +252,14 @@ export default function Home({ params }) {
         )
         .then((res) => {
           if (res.status < 300) {
+            setThinking(false);
             console.log(res.data);
             setMessages((messages) => [
               ...messages,
               {
                 type: "agent",
                 name: "froura.ai",
-                img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+                img: "https://i.imgur.com/GxlJK0O.png",
                 msg: res.data[0].content_blocks[0].text,
               },
             ]);
@@ -282,6 +293,7 @@ export default function Home({ params }) {
         )
         .then((res) => {
           if (res.status < 300) {
+            setThinking(false);
             console.log(res.data);
             setMessages((messages) => [
               ...messages,
@@ -427,13 +439,7 @@ export default function Home({ params }) {
   const UserMessage = (props) => {
     return (
       <Flex flexDir="row" mt="20px">
-        <Avatar
-          src={props.img}
-          name={props.name}
-          boxSize="30px"
-          borderRadius="200px"
-          mr="20px"
-        />
+        <Avatar src={props.img} boxSize="30px" borderRadius="200px" mr="20px" />
         <Flex flexDir="column">
           <Text fontSize="16px" fontWeight="600" color="#002A48">
             {props.name}
@@ -486,22 +492,24 @@ export default function Home({ params }) {
                     fontWeight="800"
                     lineHeight="1"
                     mb="0"
-                    mt="80px"
+                    mt="40px"
                   >
                     {inUSD(wallet)}
                   </Text>
 
-                  <IconButton
-                    borderRadius="100%"
-                    icon={<FiPlus boxSize="20px" />}
-                    bg="white"
-                    height="30px"
-                    width="30px"
-                    maxH="30px"
-                    maxW="30px"
-                    minW="30px"
-                    onClick={onOpen}
-                  />
+                  <Tooltip label="Manual deposit">
+                    <IconButton
+                      borderRadius="100%"
+                      icon={<FiPlus boxSize="20px" />}
+                      bg="white"
+                      height="30px"
+                      width="30px"
+                      maxH="30px"
+                      maxW="30px"
+                      minW="30px"
+                      onClick={onOpen}
+                    />
+                  </Tooltip>
                 </Flex>
               </Flex>
               <Flex
@@ -528,23 +536,23 @@ export default function Home({ params }) {
             {/* END CARDS SECTION */}
 
             {/* TABLE SECTION */}
-            <Flex flexDir="column" mt="50px">
+            <Flex flexDir="column" mt="40px">
               <Text color="#3B3B3B" fontWeight="700" fontSize="22px">
                 Recent Transactions
               </Text>
               {transactions ? (
                 <Flex
                   flexDir="column"
-                  height="35vh"
-                  minH="35vh"
-                  maxH="35vh"
+                  height="40vh"
+                  minH="40vh"
+                  maxH="40vh"
                   overflow="scroll"
                 >
                   {transactions
                     .slice()
                     .reverse()
                     .map((tr, id) => (
-                      <Flex flexDir="column" cursor="pointer" key={id}>
+                      <Flex flexDir="column" key={id}>
                         <Flex
                           width="100%"
                           height="1px"
@@ -583,7 +591,6 @@ export default function Home({ params }) {
                               </Text>
                             </Flex>
                             <Text color="#5D5D5D" fontSize="14px">
-                              {/* {tr.transaction_type.toUpperCase()},{" "} */}
                               {moment(tr.timestamp).fromNow()}
                             </Text>
                           </Flex>
@@ -621,20 +628,40 @@ export default function Home({ params }) {
                 <Text fontSize="20px" fontWeight="500" color="#526C7F">
                   froura assistant
                 </Text>
-                <IconButton
-                  icon={<FiRefreshCw size="12px" />}
-                  height="30px"
-                  width="30px"
-                  minH="30px"
-                  maxH="30px"
-                  maxW="30px"
-                  minW="30px"
-                  padding="0px"
-                  onClick={() => {
-                    setMessages([]);
-                    setThread("");
-                  }}
-                />
+                <Flex flexDir="row">
+                  <Tooltip label="Edit context">
+                    <IconButton
+                      icon={<FiEdit2 size="12px" />}
+                      height="30px"
+                      width="30px"
+                      minH="30px"
+                      maxH="30px"
+                      maxW="30px"
+                      minW="30px"
+                      padding="0px"
+                      mr="5px"
+                      onClick={() => {
+                        console.log("hello");
+                      }}
+                    />
+                  </Tooltip>
+                  <Tooltip label="New session">
+                    <IconButton
+                      icon={<FiRefreshCw size="12px" />}
+                      height="30px"
+                      width="30px"
+                      minH="30px"
+                      maxH="30px"
+                      maxW="30px"
+                      minW="30px"
+                      padding="0px"
+                      onClick={() => {
+                        setMessages([]);
+                        setThread("");
+                      }}
+                    />
+                  </Tooltip>
+                </Flex>
               </Flex>
               <Flex
                 width="100%"
@@ -650,9 +677,33 @@ export default function Home({ params }) {
                 overflow="scroll"
                 ref={flexRef}
               >
-                {messages.map((m, e) => (
-                  <UserMessage img={m.img} name={m.name} msg={m.msg} />
+                {messages.map((m, key) => (
+                  <UserMessage
+                    key={key}
+                    img={m.img}
+                    name={m.name}
+                    msg={m.msg}
+                  />
                 ))}
+                {thinking ? (
+                  <>
+                    <Flex flexDir="row" mt="20px">
+                      <Avatar
+                        src="https://i.imgur.com/GxlJK0O.png"
+                        boxSize="30px"
+                        borderRadius="200px"
+                        mr="20px"
+                      />
+                      <Flex flexDir="column">
+                        <Text fontSize="16px" fontWeight="600" color="#002A48">
+                          froura.ai
+                        </Text>
+
+                        <Spinner mt="5px" boxSize="20px" />
+                      </Flex>
+                    </Flex>
+                  </>
+                ) : null}
               </Flex>
             </Flex>
             <Flex flexDir="row">
@@ -669,6 +720,12 @@ export default function Home({ params }) {
                   placeholder="How can I help?"
                   value={userMessage}
                   onChange={(e) => setUserMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      sendUserMessage();
+                      setUserMessage("");
+                    }
+                  }}
                 />
                 <InputRightElement
                   cursor="pointer"
