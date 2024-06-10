@@ -26,6 +26,7 @@ import {
 import { useEffect, useState } from "react";
 import { FiPlus, FiSend } from "react-icons/fi";
 import moment from "moment";
+import AudioRecorder from "../components/audio";
 
 export default function Home({ params }) {
   const toast = useToast();
@@ -39,6 +40,7 @@ export default function Home({ params }) {
   const [messages, setMessages] = useState([]);
   const [userMessage, setUserMessage] = useState("");
   const [thread, setThread] = useState();
+  const [transcribedText, setTranscribedText] = useState("");
 
   // -------
   // AUTHORIZATION LOGIC
@@ -82,6 +84,19 @@ export default function Home({ params }) {
       setUserMessage("");
       postUserMessage(msgcontent);
     }
+  }
+
+  function customUserMessageSend(transmsg) {
+    setMessages([
+      ...messages,
+      {
+        type: "user",
+        name: "Parth Sharma",
+        img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+        msg: transmsg,
+      },
+    ]);
+    setTranscribedText("");
   }
 
   // -------
@@ -219,6 +234,12 @@ export default function Home({ params }) {
     getUserWallet();
     getUserTransactions();
   }, [dashTrigger]);
+
+  useEffect(() => {
+    if (transcribedText !== "") {
+      customUserMessageSend(transcribedText);
+    }
+  }, [transcribedText]);
 
   // -------
   // MODAL LOGIC
@@ -472,21 +493,24 @@ export default function Home({ params }) {
                 ))}
               </Flex>
             </Flex>
-            <InputGroup>
-              <Input
-                padding="10px 20px"
-                border="1px solid"
-                borderColor="#CBD3D9"
-                variant="outline"
-                borderRadius="30px"
-                placeholder="How can I help?"
-                value={userMessage}
-                onChange={(e) => setUserMessage(e.target.value)}
-              />
-              <InputRightElement>
-                <Icon as={FiSend} color="black" onClick={sendUserMessage} />
-              </InputRightElement>
-            </InputGroup>
+            <Flex flexDir="row">
+              <InputGroup mr="10px">
+                <Input
+                  padding="10px 20px"
+                  border="1px solid"
+                  borderColor="#CBD3D9"
+                  variant="outline"
+                  borderRadius="30px"
+                  placeholder="How can I help?"
+                  value={userMessage}
+                  onChange={(e) => setUserMessage(e.target.value)}
+                />
+                <InputRightElement>
+                  <Icon as={FiSend} color="black" onClick={sendUserMessage} />
+                </InputRightElement>
+              </InputGroup>
+              <AudioRecorder setTranscribedText={setTranscribedText} />
+            </Flex>
           </Flex>
         </Flex>
       ) : (

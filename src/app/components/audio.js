@@ -9,7 +9,7 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-export default function Home() {
+const AudioRecorder = ({ setTranscribedText }) => {
   const [recording, setRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState(null);
   const mediaRecorderRef = useRef(null);
@@ -75,9 +75,10 @@ export default function Home() {
         file,
         model: "whisper-1",
       });
-      console.log(response);
       if (response.text) {
+        console.log(response);
         setTranscription(response.text);
+        setTranscribedText(response.text);
       } else {
         throw new Error("Empty transcription response");
       }
@@ -87,30 +88,10 @@ export default function Home() {
   };
 
   return (
-    <Flex direction="column" align="center" justify="center" height="100vh">
-      <Heading mb={8}>Audio Recorder</Heading>
-      <Stack direction="row" spacing={4}>
-        {recording ? (
-          <Button
-            aria-label="Stop Recording"
-            colorScheme="red"
-            onClick={stopRecording}
-          >
-            Stop
-          </Button>
-        ) : (
-          <Button aria-label="Start Recording" onClick={startRecording}>
-            Start
-          </Button>
-        )}
-        <Button onClick={playRecordedAudio} disabled={!recordedBlob}>
-          Playback Recorded Audio
-        </Button>
-      </Stack>
-      {recordedBlob && (
-        <Text mt={4}>Recorded Audio Blob Size: {recordedBlob.size} bytes</Text>
-      )}
-      {transcription && <Text mt={4}>Transcription: {transcription}</Text>}
-    </Flex>
+    <Button onClick={recording ? stopRecording : startRecording}>
+      {recording ? "Stop" : "Record"}
+    </Button>
   );
-}
+};
+
+export default AudioRecorder;
