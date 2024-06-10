@@ -126,6 +126,7 @@ export default function Home({ params }) {
     ]);
     setTranscribedText("");
     postUserMessage(transmsg);
+    setThinking(true);
   }
 
   const scrollToBottom = () => {
