@@ -24,9 +24,10 @@ import {
   Icon,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { FiPlus, FiSend } from "react-icons/fi";
+import { FiPlus, FiRefreshCw, FiSend } from "react-icons/fi";
 import moment from "moment";
 import AudioRecorder from "../components/audio";
+import ReactMarkdown from "react-markdown";
 
 export default function Home({ params }) {
   const toast = useToast();
@@ -39,8 +40,9 @@ export default function Home({ params }) {
   const [dashTrigger, setDashTrigger] = useState(0);
   const [messages, setMessages] = useState([]);
   const [userMessage, setUserMessage] = useState("");
-  const [thread, setThread] = useState();
+  const [thread, setThread] = useState("");
   const [transcribedText, setTranscribedText] = useState("");
+  const [consent, setConsent] = useState();
 
   // -------
   // AUTHORIZATION LOGIC
@@ -97,6 +99,7 @@ export default function Home({ params }) {
       },
     ]);
     setTranscribedText("");
+    postUserMessage(transmsg);
   }
 
   // -------
@@ -197,15 +200,95 @@ export default function Home({ params }) {
   }
 
   function postUserMessage(msgcontent) {
-    fetch("https://api.froura.xyz/api/agent/assistant/", {
-      method: "POST",
+    if (thread)
+      fetch("https://api.froura.xyz/api/agent/assistant/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Token " + token,
+        },
+        body: JSON.stringify({
+          message: msgcontent,
+          thread_id: thread,
+        }),
+      })
+        .then((response) =>
+          response.json().then((data) => ({
+            data: data,
+            status: response.status,
+          }))
+        )
+        .then((res) => {
+          if (res.status < 300) {
+            console.log(res.data);
+            setMessages((messages) => [
+              ...messages,
+              {
+                type: "agent",
+                name: "froura.ai",
+                img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+                msg: res.data[0].content_blocks[0].text,
+              },
+            ]);
+          } else {
+            toast({
+              title: "An error occurred. Please try again.",
+              position: "top-right",
+              status: "error",
+              isClosable: true,
+            });
+          }
+        });
+    else
+      fetch("https://api.froura.xyz/api/agent/assistant/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Token " + token,
+        },
+        body: JSON.stringify({
+          message: msgcontent,
+        }),
+      })
+        .then((response) =>
+          response.json().then((data) => ({
+            data: data,
+            status: response.status,
+          }))
+        )
+        .then((res) => {
+          if (res.status < 300) {
+            console.log(res.data);
+            setMessages((messages) => [
+              ...messages,
+              {
+                type: "agent",
+                name: "froura.ai",
+                img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+                msg: res.data[0].content_blocks[0].text,
+              },
+            ]);
+            setThread(res.data[0].thread_id);
+            if (res.data[0].tool_used === "create_doordash_order")
+              setDashTrigger(dashTrigger + 1);
+          } else {
+            toast({
+              title: "An error occurred. Please try again.",
+              position: "top-right",
+              status: "error",
+              isClosable: true,
+            });
+          }
+        });
+  }
+
+  function checkConsents() {
+    fetch("https://api.froura.xyz/api/gateway/payment-verifications/", {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Token " + token,
       },
-      body: JSON.stringify({
-        message: msgcontent,
-      }),
     })
       .then((response) =>
         response.json().then((data) => ({
@@ -215,7 +298,57 @@ export default function Home({ params }) {
       )
       .then((res) => {
         if (res.status < 300) {
-          console.log(res.data);
+          if (res.data) {
+            if (res.data[0]) {
+              setConsent(res.data[0]);
+              onOpen2();
+            }
+          }
+        } else {
+          toast({
+            title: "An error occurred. Please try again.",
+            position: "top-right",
+            status: "error",
+            isClosable: true,
+          });
+        }
+      });
+  }
+
+  function consentPayment(val) {
+    fetch(
+      "https://api.froura.xyz/api/gateway/payment-verifications/" +
+        consent.id +
+        "/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Token " + token,
+        },
+        body: JSON.stringify({
+          consent_given: val,
+        }),
+      }
+    )
+      .then((response) =>
+        response.json().then((data) => ({
+          data: data,
+          status: response.status,
+        }))
+      )
+      .then((res) => {
+        if (res.status < 300) {
+          if (res.data) {
+            toast({
+              title: "Payment successful.",
+              position: "top-right",
+              status: "success",
+              isClosable: true,
+            });
+            setDashTrigger(dashTrigger + 1);
+            onClose2();
+          }
         } else {
           toast({
             title: "An error occurred. Please try again.",
@@ -241,10 +374,23 @@ export default function Home({ params }) {
     }
   }, [transcribedText]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkConsents();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // -------
   // MODAL LOGIC
   // -------
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isOpen2,
+    onOpen: onOpen2,
+    onClose: onClose2,
+  } = useDisclosure();
   const [show, setShow] = useState(false);
 
   // -------
@@ -265,42 +411,7 @@ export default function Home({ params }) {
           <Text fontSize="16px" fontWeight="600" color="#002A48">
             {props.name}
           </Text>
-          <Text fontWeight="400" fontSize="18px" color="#526C7F">
-            {props.msg}
-          </Text>
-        </Flex>
-      </Flex>
-    );
-  };
-
-  const AgentMessage = (props) => {
-    return (
-      <Flex flexDir="row" mt="20px">
-        <Avatar bg="#002A48" boxSize="30px" borderRadius="200px" mr="20px" />
-        <Flex flexDir="column">
-          <Text fontSize="16px" fontWeight="600" color="#002A48">
-            {props.name}
-          </Text>
-          <Text fontWeight="400" fontSize="18px" color="#526C7F">
-            {props.msg}
-          </Text>
-          <Flex flexDir="column" p="20px">
-            {props.steps.map((st, k) => (
-              <Flex flexDir="row" m="5px 0" alignItems="center">
-                <Box
-                  bg="green"
-                  height="20px"
-                  width="20px"
-                  borderRadius="100%"
-                  mr="10px"
-                ></Box>
-                <Text color="#526C7F">{st.text}</Text>
-              </Flex>
-            ))}
-          </Flex>
-          <Text fontWeight="400" fontSize="18px" color="#526C7F">
-            {props.msg_conf}
-          </Text>
+          <ReactMarkdown>{props.msg}</ReactMarkdown>
         </Flex>
       </Flex>
     );
@@ -428,7 +539,7 @@ export default function Home({ params }) {
                           </Text>
                         </Flex>
                         <Text color="#5D5D5D" fontSize="14px">
-                          {tr.transaction_type.toUpperCase()},{" "}
+                          {/* {tr.transaction_type.toUpperCase()},{" "} */}
                           {moment(tr.timestamp).fromNow()}
                         </Text>
                       </Flex>
@@ -460,9 +571,25 @@ export default function Home({ params }) {
             justifyContent="space-between"
           >
             <Flex flexDir="column">
-              <Text fontSize="20px" fontWeight="400" color="#526C7F">
-                froura assistant
-              </Text>
+              <Flex flexDir="row" width="100%" justifyContent="space-between">
+                <Text fontSize="20px" fontWeight="400" color="#526C7F">
+                  froura assistant
+                </Text>
+                <IconButton
+                  icon={<FiRefreshCw size="12px" />}
+                  height="30px"
+                  width="30px"
+                  minH="30px"
+                  maxH="30px"
+                  maxW="30px"
+                  minW="30px"
+                  padding="0px"
+                  onClick={() => {
+                    setMessages([]);
+                    setThread("");
+                  }}
+                />
+              </Flex>
               <Flex
                 width="100%"
                 height="1px"
@@ -477,19 +604,20 @@ export default function Home({ params }) {
                 overflow="scroll"
               >
                 {messages.map((m, e) => (
-                  <>
-                    {m.type === "user" ? (
-                      <UserMessage img={m.img} name={m.name} msg={m.msg} />
-                    ) : null}
-                    {m.type === "agent" ? (
-                      <AgentMessage
-                        name={m.name}
-                        msg={m.msg}
-                        steps={m.steps}
-                        msg_conf={m.msg_conf}
-                      />
-                    ) : null}
-                  </>
+                  // <>
+                  //   {m.type === "user" ? (
+                  //     <UserMessage img={m.img} name={m.name} msg={m.msg} />
+                  //   ) : null}
+                  //   {m.type === "agent" ? (
+                  //     <AgentMessage
+                  //       name={m.name}
+                  //       msg={m.msg}
+                  //       steps={m.steps}
+                  //       msg_conf={m.msg_conf}
+                  //     />
+                  //   ) : null}
+                  // </>
+                  <UserMessage img={m.img} name={m.name} msg={m.msg} />
                 ))}
               </Flex>
             </Flex>
@@ -516,9 +644,12 @@ export default function Home({ params }) {
       ) : (
         <Spinner m="auto" />
       )}
-      {/* <Modal
-        isOpen={isOpen}
-        onClose={onClose}
+      {/* ============= */}
+      {/* PAYMENT VERIFICATION */}
+      {/* ============= */}
+      <Modal
+        isOpen={isOpen2}
+        onClose={onClose2}
         size="md"
         isCentered
         closeOnEsc={false}
@@ -530,21 +661,34 @@ export default function Home({ params }) {
             Payment Request Alert
           </ModalHeader>
 
-          <ModalBody m="auto" textAlign="center" fontSize="18px">
-            "froura assistant" has requested to spend $12.99 on DOORDASH-LLC for
-            McChicken Burger at 8:46PM, 9th June, 2024.
-          </ModalBody>
+          {consent && consent.order ? (
+            <ModalBody m="auto" textAlign="center" fontSize="18px">
+              "froura assistant" has requested to pay{" "}
+              {inUSD(consent.order.amount)} to {consent.order.payee.name} at{" "}
+              {moment(consent.order.created_at).calendar()}
+            </ModalBody>
+          ) : null}
 
           <ModalFooter>
-            <Button colorScheme="green" mr={3} onClick={onClose} width="50%">
+            <Button
+              colorScheme="green"
+              mr={3}
+              onClick={() => consentPayment(true)}
+              width="50%"
+            >
               Approve
             </Button>
-            <Button colorScheme="red" width="50%" onClick={onClose}>
+            <Button
+              colorScheme="red"
+              width="50%"
+              onClick={() => consentPayment(false)}
+            >
               Deny
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal> */}
+      </Modal>
+      {/* ============= */}
       <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
         <ModalOverlay />
         <ModalContent p="20px" borderRadius="20px">
@@ -577,32 +721,7 @@ export default function Home({ params }) {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      {/* ============= */}
     </>
   );
 }
-
-// {
-//   type: "agent",
-//   name: "froura.ai",
-//   msg: "Sure! Just give me a second to process that request. I’ll connect with Doordash and send you a request to approve the final payment.",
-//   steps: [
-//     {
-//       text: "Connecting to DoorDash",
-//       status: "Completed",
-//     },
-//     {
-//       text: "Sending DoorDash order and customer details",
-//       status: "Progress",
-//     },
-//     {
-//       text: "Raising a payment request",
-//       status: "Pending",
-//     },
-//     {
-//       text: "Waiting for confirmation of payment receipt",
-//       status: "Pending",
-//     },
-//   ],
-//   msg_conf:
-//     "Done! Your order is placed. It should arrive within 30 minutes.",
-// },
