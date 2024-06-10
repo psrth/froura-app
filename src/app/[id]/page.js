@@ -23,7 +23,7 @@ import {
   InputRightElement,
   Icon,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FiPlus, FiRefreshCw, FiSend } from "react-icons/fi";
 import moment from "moment";
 import AudioRecorder from "../components/audio";
@@ -31,6 +31,8 @@ import ReactMarkdown from "react-markdown";
 
 export default function Home({ params }) {
   const toast = useToast();
+  const flexRef = useRef(null);
+
   // -------
   // STATE
   // -------
@@ -49,13 +51,24 @@ export default function Home({ params }) {
   // -------
   const slug = params.id;
   let token = "";
+  let user = "";
+  let pp = "";
 
-  if (slug === "lm1t7WMk4jTlbFAt")
+  if (slug === "lm1t7WMk4jTlbFAt") {
+    user = "YCombinator";
     token = "6a8f8fd0ec2e17936d116080a735f0fb43e89628"; // YC token
-  if (slug === "h3WqBKDuBAVMMYSf")
+    pp = "https://i.imgur.com/A4GDHkl.png";
+  }
+  if (slug === "h3WqBKDuBAVMMYSf") {
+    user = "Parth Sharma";
     token = "b678e62a6a777c58521347f7e4dd97d89276be57"; // Parth token
-  if (slug === "Tvd5l5of3dOJHLvH")
+    pp = "https://avatars.githubusercontent.com/u/45586386?v=4";
+  }
+  if (slug === "Tvd5l5of3dOJHLvH") {
+    user = "Param Kapur";
     token = "5d9624c6e73b82888ba5dc01f5aae04b78d77840"; // Param token
+    pp = "https://i.imgur.com/BftfnT3.jpeg";
+  }
 
   // -------
   // UTIL FUNCTIONS
@@ -77,8 +90,8 @@ export default function Home({ params }) {
         ...messages,
         {
           type: "user",
-          name: "Parth Sharma",
-          img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+          name: user,
+          img: pp,
           msg: userMessage,
         },
       ]);
@@ -93,14 +106,23 @@ export default function Home({ params }) {
       ...messages,
       {
         type: "user",
-        name: "Parth Sharma",
-        img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+        name: user,
+        img: pp,
         msg: transmsg,
       },
     ]);
     setTranscribedText("");
     postUserMessage(transmsg);
   }
+
+  const scrollToBottom = () => {
+    if (flexRef.current) {
+      flexRef.current.scroll({
+        top: flexRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
 
   // -------
   // API FUNCTIONS
@@ -266,7 +288,7 @@ export default function Home({ params }) {
               {
                 type: "agent",
                 name: "froura.ai",
-                img: "https://avatars.githubusercontent.com/u/45586386?v=4",
+                img: "https://i.imgur.com/GxlJK0O.png",
                 msg: res.data[0].content_blocks[0].text,
               },
             ]);
@@ -362,7 +384,7 @@ export default function Home({ params }) {
   }
 
   // -------
-  // useEffect
+  // useEffects
   // -------
   useEffect(() => {
     getUserWallet();
@@ -382,6 +404,10 @@ export default function Home({ params }) {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   // -------
   // MODAL LOGIC
@@ -603,6 +629,7 @@ export default function Home({ params }) {
                 height="fit-content"
                 maxHeight="65vh"
                 overflow="scroll"
+                ref={flexRef}
               >
                 {messages.map((m, e) => (
                   <UserMessage img={m.img} name={m.name} msg={m.msg} />
